@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Repo AI Analyzer</title>
+<style>
+:root {
+  --bg: #070b14;
+  --surface: #0f141f;
+  --surface-hover: #161e2e;
+  --border: rgba(255,255,255,0.06);
+  --border-hover: rgba(255,255,255,0.12);
+  --text: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent: #60a5fa;
+  --accent-hover: #93c5fd;
+  --accent-glow: rgba(96,165,250,0.15);
+  --success: #34d399;
+  --error: #f87171;
+  --error-bg: rgba(248,113,113,0.08);
+  --code-bg: #1a1f2e;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.header {
+  border-bottom: 1px solid var(--border);
+  background: rgba(7,11,20,0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+.logo-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+}
+.main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+.hero {
+  text-align: center;
+  margin-bottom: 3rem;
+  animation: fadeUp 0.6s ease-out;
+}
+.hero h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #fff 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero p {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+}
+.provider-select {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.provider-option {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  background: rgba(255,255,255,0.02);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.provider-option input { display: none; }
+.provider-option:hover { border-color: var(--border-hover); color: var(--text); }
+.provider-option.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+.input-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  animation: fadeUp 0.7s ease-out;
+  transition: border-color 0.3s;
+}
+.input-card:hover { border-color: var(--border-hover); }
+.input-group { display: flex; flex-direction: column; gap: 1rem; }
+.input-row { display: flex; gap: 0.75rem; align-items: stretch; }
+.input-wrapper { flex: 1; position: relative; }
+.input-wrapper label {
+  position: absolute; left: 1rem; top: -0.6rem;
+  background: var(--surface); padding: 0 0.5rem;
+  font-size: 0.75rem; color: var(--text-muted);
+  font-weight: 500; pointer-events: none;
+}
+input[type="text"], input[type="password"] {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+input[type="text"]:focus, input[type="password"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+input::placeholder { color: var(--text-muted); opacity: 0.6; }
+.btn {
+  padding: 0.85rem 2rem;
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  color: #fff; border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(96,165,250,0.3);
+}
+.btn:active { transform: translateY(0); }
+.btn:disabled {
+  opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none;
+}
+.btn .spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.key-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0.5rem;
+}
+.key-toggle input { display: none; }
+.key-toggle .toggle-switch {
+  width: 36px; height: 20px;
+  background: var(--border);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s;
+}
+.key-toggle .toggle-switch::after {
+  content: '';
+  position: absolute;
+  left: 2px; top: 2px;
+  width: 16px; height: 16px;
+  background: var(--text-secondary);
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.key-toggle input:checked + .toggle-switch { background: var(--accent); }
+.key-toggle input:checked + .toggle-switch::after {
+  transform: translateX(16px);
+  background: #fff;
+}
+.alert {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.5rem;
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+  animation: shake 0.4s ease-out;
+}
+.alert.show { display: flex; }
+.alert.error {
+  background: var(--error-bg);
+  border: 1px solid rgba(248,113,113,0.2);
+  color: var(--error);
+}
+.analysis-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 2rem;
+  display: none;
+  animation: fadeUp 0.5s ease-out;
+}
+.analysis-card.active { display: block; }
+.card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.card-header h2 { font-size: 1.1rem; font-weight: 600; }
+.card-header .icon {
+  width: 28px; height: 28px;
+  background: var(--accent-glow);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem;
+}
+.card-body { padding: 1.5rem; }
+.markdown-body {
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--text);
+}
+.markdown-body h1, .markdown-body h2, .markdown-body h3,
+.markdown-body h4, .markdown-body h5, .markdown-body h6 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.markdown-body h1 { font-size: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+.markdown-body h2 { font-size: 1.25rem; }
+.markdown-body h3 { font-size: 1.1rem; }
+.markdown-body p { margin-bottom: 1rem; }
+.markdown-body ul, .markdown-body ol {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+.markdown-body li { margin-bottom: 0.4rem; }
+.markdown-body a { color: var(--accent); text-decoration: none; }
+.markdown-body a:hover { text-decoration: underline; }
+.markdown-body blockquote {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-glow);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-style: italic;
+}
+.markdown-body pre {
+  background: var(--code-bg);
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+}
+.markdown-body code {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.85rem;
+  background: var(--code-bg);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+}
+.code-block-wrapper { position: relative; }
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.code-block-wrapper:hover .copy-btn { opacity: 1; }
+.copy-btn:hover { color: var(--text); }
+.chat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: none;
+  animation: fadeUp 0.6s ease-out;
+  height: 600px;
+  flex-direction: column;
+}
+.chat-card.active { display: flex; }
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.chat-message {
+  display: flex;
+  gap: 0.875rem;
+  max-width: 85%;
+  animation: fadeScale 0.3s ease-out;
+}
+.chat-message.user { align-self: flex-end; flex-direction: row-reverse; }
+.chat-message.assistant { align-self: flex-start; }
+.chat-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.chat-message.user .chat-avatar { background: linear-gradient(135deg, var(--accent), #8b5cf6); }
+.chat-message.assistant .chat-avatar { background: var(--surface-hover); border: 1px solid var(--border); }
+.chat-bubble {
+  padding: 0.875rem 1.125rem;
+  border-radius: 16px;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  max-width: 100%;
+}
+.chat-message.user .chat-bubble {
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.chat-message.assistant .chat-bubble {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+.chat-timestamp {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  text-align: center;
+}
+.chat-input-area {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 0.75rem;
+}
+.chat-input-area input {
+  flex: 1;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s;
+}
+.chat-input-area input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.typing-indicator {
+  display: none;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.75rem 1rem;
+}
+.typing-indicator.active { display: flex; }
+.typing-indicator span {
+  width: 8px; height: 8px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: typing 1.4s infinite ease-in-out;
+}
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-hover) 25%, var(--border) 50%, var(--surface-hover) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+.skeleton-text { height: 1rem; margin-bottom: 0.75rem; }
+.skeleton-title { height: 1.5rem; width: 60%; margin-bottom: 1rem; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes typing {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-6px); }
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+@media (max-width: 640px) {
+  .hero h1 { font-size: 1.75rem; }
+  .main { padding: 2rem 1rem; }
+  .input-row { flex-direction: column; }
+  .btn { width: 100%; }
+  .chat-card { height: 500px; }
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">AI</div>
+      <span>Repo Analyzer</span>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="hero">
+    <h1>Analyze Any GitHub Repository</h1>
+    <p>Paste a repo URL, add your API key, and get AI-powered insights</p>
+  </div>
+
+  <div class="input-card">
+    <div class="input-group">
+      <div class="provider-select">
+        <label class="provider-option active">
+          <input type="radio" name="provider" value="groq" checked onchange="onProviderChange(this)">
+          <span>Groq</span>
+        </label>
+        <label class="provider-option">
+          <input type="radio" name="provider" value="nvidia" onchange="onProviderChange(this)">
+          <span>NVIDIA NIM</span>
+        </label>
+      </div>
+      <div class="input-row">
+        <div class="input-wrapper" style="flex:2">
+          <label for="repoUrl">Repository URL</label>
+          <input type="text" id="repoUrl" placeholder="https://github.com/owner/repo">
+        </div>
+        <div class="input-wrapper" style="flex:3">
+          <label for="apiKey" id="apiKeyLabel">Groq API Key</label>
+          <input type="password" id="apiKey" placeholder="gsk_...">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <label class="key-toggle">
+          <input type="checkbox" id="showKey">
+          <div class="toggle-switch"></div>
+          <span>Show API key</span>
+        </label>
+        <button id="analyzeBtn" class="btn" onclick="analyzeRepo()">
+          <span>Analyze</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="errorBox" class="alert error"></div>
+
+  <div id="skeletonLoader" class="analysis-card" style="padding:2rem;display:none;">
+    <div class="skeleton skeleton-title"></div>
+    <div class="skeleton skeleton-text" style="width:90%"></div>
+    <div class="skeleton skeleton-text" style="width:80%"></div>
+    <div class="skeleton skeleton-text" style="width:95%"></div>
+    <div class="skeleton skeleton-text" style="width:70%"></div>
+  </div>
+
+  <div id="analysisCard" class="analysis-card">
+    <div class="card-header">
+      <div class="icon">分析</div>
+      <h2>Repository Analysis</h2>
+    </div>
+    <div class="card-body markdown-body" id="analysisContent"></div>
+  </div>
+
+  <div id="chatCard" class="chat-card">
+    <div class="card-header" style="flex-shrink:0;">
+      <div class="icon">AI</div>
+      <h2>Discussion</h2>
+    </div>
+    <div class="chat-messages" id="chatContainer"></div>
+    <div class="typing-indicator" id="typingIndicator">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="Ask about architecture, code quality, improvements...">
+      <button id="chatBtn" class="btn" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Markdown Renderer =====
+
+function renderMarkdown(md) {
+  if (!md) return '';
+
+  var codeBlocks = [];
+  var idx = 0;
+
+  var html = md
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, function(_, lang, code) {
+    var id = '§§CB' + (idx++) + '§§';
+    var langAttr = lang ? ' class="language-' + lang.replace(/[^a-zA-Z0-9_-]/g, '') + '"' : '';
+    codeBlocks.push('<pre><code' + langAttr + '>' + code.trim() + '</code></pre>');
+    return id;
+  });
+
+  var lines = html.split('\n');
+  var out = '';
+  var i = 0;
+
+  function inline(t) {
+    t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+    t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    t = t.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    return t;
+  }
+
+  while (i < lines.length) {
+    var line = lines[i];
+    var trimmed = line.trim();
+
+    if (trimmed === '') { i++; continue; }
+
+    if (/^---+\s*$/.test(trimmed)) { out += '<hr>\n'; i++; continue; }
+
+    var m = trimmed.match(/^(#{1,6})\s+(.+)$/);
+    if (m) {
+      out += '<h' + m[1].length + '>' + inline(m[2]) + '</h' + m[1].length + '>\n';
+      i++;
+      continue;
+    }
+
+    if (/^>\s/.test(trimmed)) {
+      var bqLines = [];
+      while (i < lines.length && /^>\s?/.test(lines[i].trim())) {
+        bqLines.push(lines[i].trim().replace(/^>\s?/, ''));
+        i++;
+      }
+      out += '<blockquote>' + bqLines.map(function(l) { return inline(l); }).join('<br>') + '</blockquote>\n';
+      continue;
+    }
+
+    if (/^[-*+]\s/.test(trimmed)) {
+      out += '<ul>\n';
+      while (i < lines.length && /^[-*+]\s/.test(lines[i].trim())) {
+        out += '<li>' + inline(lines[i].trim().replace(/^[-*+]\s+/, '')) + '</li>\n';
+        i++;
+      }
+      out += '</ul>\n';
+      continue;
+    }
+
+    if (/^\d+\.\s/.test(trimmed)) {
+      out += '<ol>\n';
+      while (i < lines.length && /^\d+\.\s/.test(lines[i].trim())) {
+        out += '<li>' + inline(lines[i].trim().replace(/^\d+\.\s+/, '')) + '</li>\n';
+        i++;
+      }
+      out += '</ul>\n';
+      continue;
+    }
+
+    if (/^§§CB\d+§§$/.test(trimmed)) {
+      out += trimmed + '\n';
+      i++;
+      continue;
+    }
+
+    var para = '';
+    while (i < lines.length) {
+      var l = lines[i];
+      var t = l.trim();
+      if (t === '' || /^(#{1,6}\s|>\s|[-*+]\s|\d+\.\s|---+\s*$)/.test(t)) break;
+      if (/^§§CB\d+§§$/.test(t)) break;
+      para += (para ? ' ' : '') + inline(t);
+      i++;
+    }
+    if (para) out += '<p>' + para + '</p>\n';
+  }
+
+  for (var j = 0; j < codeBlocks.length; j++) {
+    out = out.split('§§CB' + j + '§§').join(codeBlocks[j]);
+  }
+  return out;
+}
+
+// ===== Utility Functions =====
+
+function escapeHtml(text) {
+  var d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function generateId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+function decodeBase64(str) {
+  try {
+    var clean = str.replace(/\n/g, '');
+    var binary = atob(clean);
+    var bytes = new Uint8Array(binary.length);
+    for (var _b = 0; _b < binary.length; _b++) {
+      bytes[_b] = binary.charCodeAt(_b);
+    }
+    return new TextDecoder('utf-8').decode(bytes);
+  } catch (e) {
+    return '';
+  }
+}
+
+// ===== GitHub API Functions =====
+
+function parseGitHubUrl(url) {
+  var match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
+  if (!match) return null;
+  return { owner: match[1], repo: match[2].replace(/\.git$/, '') };
+}
+
+async function fetchGitHubApi(path) {
+  var res = await fetch('https://api.github.com' + path, {
+    headers: {
+      'Accept': 'application/vnd.github.v3+json',
+      'User-Agent': 'github-repo-analyzer'
+    }
+  });
+  if (!res.ok) {
+    var text = await res.text().catch(function() { return ''; });
+    throw new Error('GitHub API error: ' + res.status + ' ' + text);
+  }
+  return res.json();
+}
+
+async function fetchRepoData(owner, repo) {
+  var repoInfo = await fetchGitHubApi('/repos/' + owner + '/' + repo).catch(function() { return null; });
+  if (!repoInfo) throw new Error('Repository not found or not accessible.');
+
+  var defaultBranch = repoInfo.default_branch;
+
+  var results = await Promise.all([
+    fetchGitHubApi('/repos/' + owner + '/' + repo + '/readme').catch(function() { return null; }),
+    fetchGitHubApi('/repos/' + owner + '/' + repo + '/git/trees/' + defaultBranch + '?recursive=1').catch(function() { return null; })
+  ]);
+  var readme = results[0];
+  var tree = results[1];
+
+  var treeEntries = (tree && tree.tree) || [];
+  var filePaths = treeEntries
+    .filter(function(e) { return e.type === 'blob' && e.path; })
+    .map(function(e) { return e.path; })
+    .filter(function(p) { return !p.includes('node_modules/') && !p.includes('.git/') && !p.includes('dist/') && !p.includes('build/'); })
+    .slice(0, 200);
+
+  var keyFiles = ['package.json', 'requirements.txt', 'Cargo.toml', 'pyproject.toml', 'setup.py', 'go.mod', 'pom.xml', 'build.gradle', 'Makefile', 'Dockerfile', 'README.md', 'tsconfig.json', 'vite.config.ts', 'next.config.js'];
+  var configContents = {};
+
+  for (var fi = 0; fi < keyFiles.length; fi++) {
+    var file = keyFiles[fi];
+    if (filePaths.indexOf(file) !== -1) {
+      try {
+        var content = await fetchGitHubApi('/repos/' + owner + '/' + repo + '/contents/' + file);
+        if (content && content.content) {
+          configContents[file] = decodeBase64(content.content).substring(0, 5000);
+        }
+      } catch (e) {}
+    }
+  }
+
+  var readmeContent = '';
+  if (readme && readme.content) {
+    readmeContent = decodeBase64(readme.content).substring(0, 10000);
+  }
+
+  return {
+    name: repoInfo.full_name,
+    description: repoInfo.description || '',
+    language: repoInfo.language || '',
+    stars: repoInfo.stargazers_count || 0,
+    topics: repoInfo.topics || [],
+    fileCount: treeEntries.filter(function(e) { return e.type === 'blob'; }).length,
+    filePaths: filePaths,
+    readme: readmeContent,
+    configFiles: configContents
+  };
+}
+
+function formatRepoData(data) {
+  var configStr = '';
+  var keys = Object.keys(data.configFiles);
+  for (var ci = 0; ci < keys.length; ci++) {
+    var key = keys[ci];
+    configStr += '--- ' + key + ' ---\n' + data.configFiles[key] + '\n\n';
+  }
+
+  return 'Repository: ' + data.name + '\n' +
+    'Description: ' + data.description + '\n' +
+    'Primary Language: ' + data.language + '\n' +
+    'Stars: ' + data.stars + '\n' +
+    'Topics: ' + data.topics.join(', ') + '\n' +
+    'Total Files: ' + data.fileCount + '\n\n' +
+    'README:\n' + data.readme + '\n\n' +
+    'Key Configuration Files:\n' + configStr +
+    'File Structure (first 200 non-build files):\n' + data.filePaths.join('\n');
+}
+
+// ===== AI API Functions =====
+
+async function callAI(opts) {
+  var provider = opts.provider;
+  var apiKey = opts.apiKey;
+  var messages = opts.messages;
+  var temperature = opts.temperature !== undefined ? opts.temperature : 0.7;
+  var maxTokens = opts.max_tokens !== undefined ? opts.max_tokens : 4096;
+
+  if (provider === 'nvidia') {
+    var res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'deepseek-ai/deepseek-v4-pro',
+        messages: messages,
+        temperature: temperature,
+        max_tokens: maxTokens
+      })
+    });
+    var data = await res.json();
+    if (!res.ok) {
+      throw new Error((data.error && data.error.message) || 'NVIDIA NIM error: ' + res.status);
+    }
+    return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || 'No response.';
+  }
+
+  var res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + apiKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'openai/gpt-oss-120b',
+      messages: messages,
+      temperature: temperature,
+      max_tokens: maxTokens
+    })
+  });
+  var data = await res.json();
+  if (!res.ok) {
+    throw new Error((data.error && data.error.message) || 'Groq API error: ' + res.status);
+  }
+  return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || 'No response.';
+}
+
+// ===== Session Management =====
+
+var sessions = {};
+var sessionId = '';
+
+// ===== UI Logic =====
+
+var apiKeyInput = document.getElementById('apiKey');
+
+function getProvider() {
+  var el = document.querySelector('input[name="provider"]:checked');
+  return el ? el.value : 'groq';
+}
+
+function onProviderChange(el) {
+  document.querySelectorAll('.provider-option').forEach(function(opt) { opt.classList.remove('active'); });
+  el.closest('.provider-option').classList.add('active');
+  var provider = el.value;
+  var label = document.getElementById('apiKeyLabel');
+  if (provider === 'nvidia') {
+    label.textContent = 'NVIDIA API Key';
+    apiKeyInput.placeholder = 'nvapi_...';
+  } else {
+    label.textContent = 'Groq API Key';
+    apiKeyInput.placeholder = 'gsk_...';
+  }
+  var saved = localStorage.getItem(provider + 'ApiKey');
+  if (saved) apiKeyInput.value = saved;
+}
+
+apiKeyInput.addEventListener('input', function(e) {
+  localStorage.setItem(getProvider() + 'ApiKey', e.target.value);
+});
+
+var initialProvider = getProvider();
+var savedKey = localStorage.getItem(initialProvider + 'ApiKey');
+if (savedKey) apiKeyInput.value = savedKey;
+
+document.getElementById('showKey').addEventListener('change', function(e) {
+  apiKeyInput.type = e.target.checked ? 'text' : 'password';
+});
+
+function showError(msg) {
+  var box = document.getElementById('errorBox');
+  box.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>' + msg + '</span>';
+  box.classList.add('show');
+  setTimeout(function() { box.classList.remove('show'); }, 6000);
+}
+
+function clearError() {
+  document.getElementById('errorBox').classList.remove('show');
+}
+
+function addCopyButtons(container) {
+  try {
+    container.querySelectorAll('pre').forEach(function(pre) {
+      if (!pre.parentElement || pre.parentElement.classList.contains('code-block-wrapper')) return;
+      var wrapper = document.createElement('div');
+      wrapper.className = 'code-block-wrapper';
+      pre.parentNode.insertBefore(wrapper, pre);
+      wrapper.appendChild(pre);
+      var btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = 'Copy';
+      btn.onclick = function() {
+        navigator.clipboard.writeText(pre.textContent).catch(function() {});
+        btn.textContent = 'Copied!';
+        setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+      };
+      wrapper.appendChild(btn);
+    });
+  } catch (err) {
+    console.error('addCopyButtons error:', err);
+  }
+}
+
+async function addChatMessage(role, text) {
+  var container = document.getElementById('chatContainer');
+  var div = document.createElement('div');
+  div.className = 'chat-message ' + role;
+  var time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  var avatar = role === 'user' ? 'U' : 'AI';
+  var isAssistant = role === 'assistant';
+  var content;
+  try {
+    content = isAssistant ? renderMarkdown(text) : escapeHtml(text);
+  } catch (mdErr) {
+    console.error('renderMarkdown error:', mdErr);
+    content = escapeHtml(text);
+  }
+  var bubbleClass = isAssistant ? 'chat-bubble markdown-body' : 'chat-bubble';
+  div.innerHTML = '<div class="chat-avatar">' + avatar + '</div><div><div class="' + bubbleClass + '">' + content + '</div><div class="chat-timestamp">' + time + '</div></div>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  if (isAssistant) addCopyButtons(div);
+}
+
+async function analyzeRepo() {
+  var url = document.getElementById('repoUrl').value.trim();
+  var apiKey = apiKeyInput.value.trim();
+  var provider = getProvider();
+
+  if (!apiKey) return showError('Please enter your API key');
+  if (!url) return showError('Please enter a GitHub repository URL');
+
+  clearError();
+
+  var analyzeBtn = document.getElementById('analyzeBtn');
+  var skeleton = document.getElementById('skeletonLoader');
+  var analysisCard = document.getElementById('analysisCard');
+  var chatCard = document.getElementById('chatCard');
+  var analysisContent = document.getElementById('analysisContent');
+
+  analyzeBtn.disabled = true;
+  analyzeBtn.innerHTML = '<span class="spinner"></span>Analyzing...';
+  skeleton.style.display = 'block';
+
+  try {
+    var parsed = parseGitHubUrl(url);
+    if (!parsed) throw new Error('Invalid GitHub URL. Expected format: https://github.com/owner/repo');
+
+    var repoData = await fetchRepoData(parsed.owner, parsed.repo);
+    var context = formatRepoData(repoData);
+
+    var analysis = await callAI({
+      provider: provider,
+      apiKey: apiKey,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert software engineer and architect. Analyze the given GitHub repository thoroughly. Provide insights on its architecture, tech stack, code organization, potential improvements, and anything noteworthy. Be concise but thorough. Use markdown formatting where appropriate.'
+        },
+        {
+          role: 'user',
+          content: 'Please analyze this repository:\n\n' + context
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 4096
+    });
+
+    sessionId = generateId();
+    sessions[sessionId] = {
+      repoContext: context,
+      messages: [
+        { role: 'system', content: 'You are an expert software engineer. You have analyzed a GitHub repository. Use the repository context to answer user questions accurately. Repository context:\n\n' + context },
+        { role: 'assistant', content: analysis }
+      ]
+    };
+
+    analysisContent.innerHTML = renderMarkdown(analysis);
+    addCopyButtons(analysisContent);
+
+    skeleton.style.display = 'none';
+    analysisCard.classList.add('active');
+    chatCard.classList.add('active');
+
+    await addChatMessage('assistant', "I've analyzed the repository. Feel free to ask me anything about it!");
+    document.querySelector('.chat-card').scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    console.error('Analyze error:', err);
+    var msg = err.message;
+    if (err instanceof TypeError && msg === 'Failed to fetch') {
+      msg = 'Network error - this may be a CORS issue. Try serving this file via a local HTTP server (e.g. "npx serve ." or "python3 -m http.server") or check your internet connection.';
+    }
+    showError(msg);
+    skeleton.style.display = 'none';
+  } finally {
+    analyzeBtn.disabled = false;
+    analyzeBtn.innerHTML = '<span>Analyze</span>';
+  }
+}
+
+async function sendMessage() {
+  var input = document.getElementById('chatInput');
+  var message = input.value.trim();
+  var apiKey = apiKeyInput.value.trim();
+  var provider = getProvider();
+
+  if (!message || !sessionId) return;
+  input.value = '';
+  await addChatMessage('user', message);
+
+  var btn = document.getElementById('chatBtn');
+  var typing = document.getElementById('typingIndicator');
+  btn.disabled = true;
+  btn.textContent = '...';
+  typing.classList.add('active');
+
+  try {
+    var session = sessions[sessionId];
+    if (!session) throw new Error('Session not found. Please analyze a repository first.');
+
+    session.messages.push({ role: 'user', content: message });
+
+    var reply = await callAI({
+      provider: provider,
+      apiKey: apiKey,
+      messages: session.messages,
+      temperature: 0.7,
+      max_tokens: 4096
+    });
+
+    session.messages.push({ role: 'assistant', content: reply });
+    await addChatMessage('assistant', reply);
+  } catch (err) {
+    console.error('Chat error:', err);
+    var msg = err.message;
+    if (err instanceof TypeError && msg === 'Failed to fetch') {
+      msg = 'Network error - check your connection or try serving via HTTP (e.g. "npx serve .")';
+    }
+    showError(msg);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send';
+    typing.classList.remove('active');
+  }
+}
+
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') sendMessage();
+});
+document.getElementById('repoUrl').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') analyzeRepo();
+});
+document.getElementById('apiKey').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') document.getElementById('repoUrl').focus();
+});
+</script>
+</body>
+</html>
